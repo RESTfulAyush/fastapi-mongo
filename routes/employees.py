@@ -1,10 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from database import employees_collection
-from models import Employee
+from models import Employee, EmployeeUpdate
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
-# Create Employee
 @router.post("/")
 async def create_employee(employee: Employee):
     print('employees: ', employee)
@@ -14,11 +13,56 @@ async def create_employee(employee: Employee):
     await employees_collection.insert_one(employee.dict())
     return employee
 
-# Get Employee
-@router.get("/{employee_id}")
-async def get_employee(employee_id: str):
-    employee = await employees_collection.find_one({"employee_id": employee_id})
-    if not employee:
+@router.get("/")
+async def get_employees(
+    employee_id: str = Query(None, description="Employee ID to fetch a specific employee"),
+    department: str = Query(None, description="Department to filter employees")
+):
+    if employee_id:
+        employee = await employees_collection.find_one({"employee_id": employee_id})
+        if not employee:
+            raise HTTPException(status_code=404, detail="Employee not found")
+        employee["_id"] = str(employee["_id"])
+        return employee
+
+    query = {}
+    if department:
+        query["department"] = department
+
+    data = employees_collection.find(query)
+
+    employees = []
+    async for employee in data:
+        employee["_id"] = str(employee["_id"])
+        employees.append(employee)
+    if len(employees) == 0: return {"message": "No Employee found"}
+    return employees
+
+
+@router.put("/{employee_id}")
+async def update_employee(employee_id: str, update_data: EmployeeUpdate):
+    update_dict = update_data.dict(exclude_unset=True)
+
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="Enter data")
+
+    result = await employees_collection.update_one(
+        {"employee_id": employee_id},
+        {"$set": update_dict}
+    )
+
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Employee not found")
-    employee["_id"] = str(employee["_id"])  # convert ObjectId
-    return employee
+
+    updated_employee = await employees_collection.find_one({"employee_id": employee_id})
+    updated_employee["_id"] = str(updated_employee["_id"])
+    return updated_employee
+
+@router.delete("/{employee_id}")
+async def delete_employee(employee_id: str):
+    result = await employees_collection.delete_one({"employee_id": employee_id})
+
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    return {"detail": f"Employee {employee_id} deleted successfully"}

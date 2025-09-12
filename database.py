@@ -11,8 +11,8 @@ employees_collection = db["employees"]
 async def check_db_connection():
     try:
         await client.admin.command("ping")
-        logging.info("✅ MongoDB connection successful")
+        logging.info("MongoDB connected successful")
         return True
     except Exception as e:
-        logging.error(f"❌ MongoDB connection failed: {e}")
+        logging.error(f"MongoDB connection failed: {e}")
         return False

@@ -10,7 +10,7 @@ app.include_router(employees.router)
 async def startup_db_client():
     connected = await check_db_connection()
     if not connected:
-        print("⚠️ Warning: Could not connect to MongoDB")
+        print("Could not connect to MongoDB")
 
 @app.get("/")
 async def root():

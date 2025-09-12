@@ -9,3 +9,10 @@ class Employee(BaseModel):
     salary: Optional[float] = None
     joining_date: Optional[datetime] = None
     skills: Optional[List[str]] = []
+
+class EmployeeUpdate(BaseModel):
+    name: Optional[str] = None
+    department: Optional[str] = None
+    salary: Optional[float] = None
+    joining_date: Optional[datetime] = None
+    skills: Optional[List[str]] = None
