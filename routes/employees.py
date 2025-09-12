@@ -86,9 +86,22 @@ async def get_avg_salary_by_department():
         }
     ]
     
-    cursor = employees_collection.aggregate(pipeline)
+    data = employees_collection.aggregate(pipeline)
     result = []
-    async for doc in cursor:
+    async for doc in data:
         result.append(doc)
     
     return result
+
+@router.get("/search")
+async def search_employees_by_skill(skill: str = Query(..., description="Skill")):
+    if not skill:
+        raise HTTPException(status_code=400, detail="No Skill Passed")
+
+    data = employees_collection.find({"skills": {"$regex": skill, "$options": "i"}})
+    employees = []
+    async for employee in data:
+        employee["_id"] = str(employee["_id"])
+        employees.append(employee)
+
+    return employees
