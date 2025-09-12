@@ -66,3 +66,29 @@ async def delete_employee(employee_id: str):
         raise HTTPException(status_code=404, detail="Employee not found")
 
     return {"detail": f"Employee {employee_id} deleted successfully"}
+
+
+@router.get("/avg-salary")
+async def get_avg_salary_by_department():
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$department",
+                "avg_salary": {"$avg": "$salary"}
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "department": "$_id",
+                "avg_salary": {"$round": ["$avg_salary", 2]}
+            }
+        }
+    ]
+    
+    cursor = employees_collection.aggregate(pipeline)
+    result = []
+    async for doc in cursor:
+        result.append(doc)
+    
+    return result
